@@ -1,7 +1,7 @@
 using System;
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(CraftCategories.Main), "CraftCategories", "0.6.0", "drek932")]
+[assembly: MelonInfo(typeof(CraftCategories.Main), "CraftCategories", "0.6.1", "drek932")]
 [assembly: MelonGame("Hinterland", "TheLongDark")]
 // Load before other mods to catch their recipe registration.
 [assembly: MelonPriority(-1000)]

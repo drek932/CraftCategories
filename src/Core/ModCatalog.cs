@@ -29,6 +29,10 @@ namespace CraftCategories
 
         public static IReadOnlyList<ModEntry> Mods => mods;
 
+        /// <summary>For the troubleshooting line in the log: all recipes, and how many of them are in the game's own list.</summary>
+        public static int TotalRecipes { get; private set; }
+        public static int RecipesInGameList { get; private set; }
+
         /// <summary>Rebuilds the catalog if the number of recipes has changed.</summary>
         public static bool Refresh()
         {
@@ -39,17 +43,23 @@ namespace CraftCategories
             modOf.Clear();
             mods.Clear();
 
-            // The game's own recipes are loaded from its resources (addressables) — skip them.
-            var vanilla = new HashSet<IntPtr>();
+            // The game's own recipes are loaded from its resources (addressables). With some mod setups modded recipes
+            // end up in that list too, so it only decides for recipes that no known mod claims by name.
+            var gameList = new HashSet<IntPtr>();
             if (bm.m_AddressableBlueprints != null)
-                foreach (var bp in bm.m_AddressableBlueprints) if (bp != null) vanilla.Add(bp.Pointer);
+                foreach (var bp in bm.m_AddressableBlueprints) if (bp != null) gameList.Add(bp.Pointer);
+
+            TotalRecipes = bm.m_AllBlueprints.Count;
+            RecipesInGameList = gameList.Count;
 
             var byMod = new Dictionary<string, ModEntry>();
             foreach (var bp in bm.m_AllBlueprints)
             {
-                if (bp == null || vanilla.Contains(bp.Pointer)) continue;
+                if (bp == null) continue;
 
-                var source = FindSource(bp);
+                var source = FindSource(bp, inGameList: gameList.Contains(bp.Pointer));
+                if (source == null && gameList.Contains(bp.Pointer)) continue; // a game recipe
+
                 var mod = source?.ModName ?? UnknownMod;
 
                 modOf[bp.Pointer] = mod;
@@ -68,10 +78,14 @@ namespace CraftCategories
             return true;
         }
 
-        /// <summary>By recipe name first, then — if unambiguous — by the item it crafts.</summary>
-        private static BlueprintSources.Source FindSource(BlueprintData bp)
+        /// <summary>
+        /// By recipe name first. Then — only for recipes outside the game's list and only if unambiguous — by the item
+        /// it crafts (for game recipes this would wrongly move e.g. the game's arrowhead recipe into a mod that also makes arrowheads).
+        /// </summary>
+        private static BlueprintSources.Source FindSource(BlueprintData bp, bool inGameList)
         {
             if (BlueprintSources.FindByName(bp.name) is { } byName) return byName;
+            if (inGameList) return null;
 
             var result = bp.m_CraftedResultGear != null ? bp.m_CraftedResultGear.name : null;
             return BlueprintSources.FindByResult(result) is { Count: 1 } byResult ? byResult[0] : null;

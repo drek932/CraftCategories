@@ -146,7 +146,10 @@ namespace CraftCategories
                 var mc = GetOrAddMod(mod.Name, ref changed);
                 if (mc.Source == null) changed |= SetSource(mc, mod.Source);
                 foreach (var bp in mod.Blueprints)
+                {
+                    if (string.IsNullOrEmpty(bp.name)) continue; // can't be stored or configured without a name
                     changed |= AddItem(mc, bp.name, bp.m_CraftedResultGear != null ? bp.m_CraftedResultGear.name : null);
+                }
             }
             if (changed) Save();
 
@@ -222,7 +225,8 @@ namespace CraftCategories
         public bool IsItemShown(string mod, BlueprintData bp)
         {
             var mc = ForMod(mod);
-            return mc == null || !mc.Items.TryGetValue(bp.name, out var ic) || ic.Show;
+            if (mc == null || string.IsNullOrEmpty(bp.name)) return true;
+            return !mc.Items.TryGetValue(bp.name, out var ic) || ic.Show;
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Il2Cpp;
 using UnityEngine;
 
@@ -22,13 +23,25 @@ namespace CraftCategories
 
         // ---------- building ----------
 
+        private static bool IsBuiltFor(Panel_Crafting p) =>
+            panel != null && panel.Pointer == p.Pointer && column != null && column.IsAlive;
+
+        /// <summary>Whether the UI still has to be built or rebuilt (after a settings change) for this panel.</summary>
+        public static bool NeedsBuild(Panel_Crafting p) => !IsBuiltFor(p) || builtConfigVersion != Config.Version;
+
         /// <summary>Called every time the crafting menu is opened.</summary>
-        public static void OnPanelOpened(Panel_Crafting opened)
+        /// <param name="hookedVia">Which game method reported the opening — written to the log once, for troubleshooting.</param>
+        public static void OnPanelOpened(Panel_Crafting opened, string hookedVia)
         {
             try
             {
-                bool isNewPanel = panel == null || panel.Pointer != opened.Pointer || column == null || !column.IsAlive;
-                if (isNewPanel) Build(opened);
+                if (!IsBuiltFor(opened))
+                {
+                    Build(opened);
+                    int modRecipes = ModCatalog.Mods.Sum(m => m.Blueprints.Count);
+                    Main.Log.Msg($"Crafting menu: {modButtons.Count} mod categories added, {modRecipes} mod recipes recognized " +
+                                 $"({ModCatalog.TotalRecipes} recipes in game, {ModCatalog.RecipesInGameList} in its own list; hooked via {hookedVia})");
+                }
                 else if (builtConfigVersion != Config.Version) RebuildModButtons();
 
                 tooltip?.Hide();

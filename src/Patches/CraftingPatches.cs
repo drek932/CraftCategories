@@ -9,25 +9,66 @@ namespace CraftCategories
     {
         private static void OnPanelOpening()
         {
-            if (ModCatalog.Refresh()) Config.SyncWithCatalog();
+            try
+            {
+                if (!ModCatalog.Refresh())
+                    Main.Log.Warning("Crafting menu opened, but the game's recipe list is not available yet");
+                else
+                    Config.SyncWithCatalog();
+            }
+            catch (System.Exception e)
+            {
+                Main.Log.Error("Could not read the game's recipe list: " + e);
+            }
         }
 
-        private static void OnPanelOpened(Panel_Crafting panel) => CraftingPanelUI.OnPanelOpened(panel);
-
         // Panel_Crafting.Enable has two overloads — hook both.
+
+        // True while Panel_Crafting.Enable runs: the game calls ApplyFilter from inside it, and then the fallback below must stay idle.
+        private static bool insideEnable;
+
+        private static void BeforeEnable(bool enable)
+        {
+            if (!enable) return;
+            insideEnable = true;
+            OnPanelOpening();
+        }
+
+        private static void AfterEnable(Panel_Crafting panel, bool enable)
+        {
+            if (!enable) return;
+            insideEnable = false;
+            CraftingPanelUI.OnPanelOpened(panel, "Enable");
+        }
 
         [HarmonyPatch(typeof(Panel_Crafting), nameof(Panel_Crafting.Enable), new[] { typeof(bool) })]
         private static class Enable
         {
-            private static void Prefix(bool enable) { if (enable) OnPanelOpening(); }
-            private static void Postfix(Panel_Crafting __instance, bool enable) { if (enable) OnPanelOpened(__instance); }
+            private static void Prefix(bool enable) => BeforeEnable(enable);
+            private static void Postfix(Panel_Crafting __instance, bool enable) => AfterEnable(__instance, enable);
         }
 
         [HarmonyPatch(typeof(Panel_Crafting), nameof(Panel_Crafting.Enable), new[] { typeof(bool), typeof(bool) })]
         private static class EnableFromPanel
         {
-            private static void Prefix(bool enable) { if (enable) OnPanelOpening(); }
-            private static void Postfix(Panel_Crafting __instance, bool enable) { if (enable) OnPanelOpened(__instance); }
+            private static void Prefix(bool enable) => BeforeEnable(enable);
+            private static void Postfix(Panel_Crafting __instance, bool enable) => AfterEnable(__instance, enable);
+        }
+
+        /// <summary>
+        /// Fallback in case a game version opens the crafting menu without calling Enable:
+        /// ApplyFilter builds the recipe list on every opening. Runs before it, so recipes are already sorted by mod.
+        /// Does nothing once the UI is built, so it doesn't interfere with the normal path.
+        /// </summary>
+        [HarmonyPatch(typeof(Panel_Crafting), nameof(Panel_Crafting.ApplyFilter))]
+        private static class ApplyFilter
+        {
+            private static void Prefix(Panel_Crafting __instance)
+            {
+                if (insideEnable || !CraftingPanelUI.NeedsBuild(__instance)) return;
+                OnPanelOpening();
+                CraftingPanelUI.OnPanelOpened(__instance, "ApplyFilter");
+            }
         }
 
         /// <summary>Category change: for a mod category the game gets "All", and RecipeFilter narrows the list.</summary>
