@@ -1,5 +1,8 @@
 # CraftCategories
 
+https://github.com/user-attachments/assets/9996b235-9b8e-43dc-a88d-9b75e8a36824
+
+
 A mod for **The Long Dark** that gives every crafting mod its own category in the crafting menu, so modded recipes no longer clutter the game's standard categories.
 
 # Features:
