@@ -42,10 +42,10 @@ namespace CraftCategories
         [HarmonyPatch(typeof(Panel_Crafting), nameof(Panel_Crafting.ItemPassesFilter))]
         private static class ItemPassesFilter
         {
-            private static void Postfix(BlueprintData bpi, ref bool __result)
+            private static void Postfix(Panel_Crafting __instance, BlueprintData bpi, ref bool __result)
             {
                 if (__result && bpi != null)
-                    __result = RecipeFilter.IsVisible(bpi, CraftingPanelUI.ActiveMod);
+                    __result = RecipeFilter.IsVisible(bpi, CraftingPanelUI.ActiveMod, __instance.CanCraftBlueprint);
             }
         }
 

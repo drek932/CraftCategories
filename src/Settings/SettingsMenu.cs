@@ -34,6 +34,7 @@ namespace CraftCategories
         {
             // General settings
             ShowModNameOnHover,
+            CraftableInGameCategories,
 
             // Per-mod settings
             Placement,
@@ -116,6 +117,9 @@ namespace CraftCategories
             var hover = DefineField(tb, "g_hoverName", typeof(bool), new FieldMeta { Kind = Kind.ShowModNameOnHover },
                 Loc.Key("HOVER_NAME"), Loc.Key("HOVER_NAME_DESC"));
             hover.SetCustomAttribute(TextAttribute<SectionAttribute>(Loc.Key("GENERAL"), localize: true));
+
+            DefineField(tb, "g_craftableInGame", typeof(bool), new FieldMeta { Kind = Kind.CraftableInGameCategories },
+                Loc.Key("CRAFTABLE_IN_GAME"), Loc.Key("CRAFTABLE_IN_GAME_DESC"));
         }
 
         private static void DefineModSection(TypeBuilder tb, string prefix, ModSection s, int modCount)
@@ -200,6 +204,7 @@ namespace CraftCategories
                 object value = meta.Kind switch
                 {
                     Kind.ShowModNameOnHover => Config.Current.ShowModNameOnHover,
+                    Kind.CraftableInGameCategories => Config.Current.CraftableInGameCategories,
                     Kind.Placement => (int)mc.Placement,
                     Kind.Order => Math.Max(1, mc.Order),
                     Kind.Recipe => !mc.Items.TryGetValue(meta.Recipe, out var ic) || ic.Show,
@@ -217,6 +222,7 @@ namespace CraftCategories
                 switch (meta.Kind)
                 {
                     case Kind.ShowModNameOnHover: Config.Current.ShowModNameOnHover = (bool)field.GetValue(settings); break;
+                    case Kind.CraftableInGameCategories: Config.Current.CraftableInGameCategories = (bool)field.GetValue(settings); break;
                     case Kind.Placement: mc.Placement = (Placement)(int)field.GetValue(settings); break;
                     case Kind.Order: mc.Order = (int)field.GetValue(settings); break;
                     case Kind.Recipe when mc.Items.TryGetValue(meta.Recipe, out var ic): ic.Show = (bool)field.GetValue(settings); break;

@@ -7,6 +7,7 @@ A mod for **The Long Dark** that gives every crafting mod its own category in th
 - Each mod gets its own category button with the mod's icon
 - Scrollable category column, so there's room for any number of mods
 - Mod name on hover (can be turned off)
+- Optional: mod recipes you can craft right now also appear in the game's categories
 - Settings for each mod in the ModSettings menu:
   - **Where to show recipes**: mod category only / game categories only / everywhere
   - **Category position** in the column
@@ -29,6 +30,7 @@ Tested with The Long Dark 2.54 and MelonLoader 0.7.2.
 - Моды с рецептами находятся автоматически, подходит для любого набора модов
 - У каждого мода своя кнопка категории с иконкой, колонка категорий прокручивается
 - Название мода при наведении (можно отключить)
+- По желанию: рецепты модов, которые можно сделать прямо сейчас, показываются и в категориях игры
 - Настройки в ModSettings: где показывать рецепты, позиция категории, скрытие отдельных рецептов
 
 **Установка:** распакуйте .zip из [релизов](https://github.com/drek932/CraftCategories/releases) в папку `Mods`. Нужен MelonLoader, для меню настроек — ModSettings.

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace CraftCategories
 {
@@ -20,6 +22,12 @@ namespace CraftCategories
             ["HOVER_NAME_DESC"] = (
                 "Да — при наведении мыши на кнопку категории мода рядом появляется название этого мода. Нет — подсказки нет.",
                 "Yes — hovering the mouse over a mod's category button shows the mod's name next to it. No — no hint is shown."),
+            ["CRAFTABLE_IN_GAME"] = ("Доступные рецепты модов в категориях игры", "Craftable mod recipes in game categories"),
+            ["CRAFTABLE_IN_GAME_DESC"] = (
+                "Да — рецепт мода, который можно сделать прямо сейчас (хватает материалов и инструментов), показывается ещё и в категориях игры, " +
+                "включая «Все», даже если для мода выбрано «Только в категории мода». В категории мода он тоже остаётся. Нет — такие рецепты только в категории мода.",
+                "Yes — a mod recipe you can craft right now (you have the materials and tools) is also shown in the game's categories, " +
+                "including All, even if the mod is set to Mod category only. It also stays in the mod's category. No — such recipes stay in the mod's category only."),
 
             // --- Where to show recipes ---
             ["PLACEMENT"] = ("Где показывать рецепты", "Where to show recipes"),
@@ -53,21 +61,32 @@ namespace CraftCategories
             ["OTHER_MODS"] = ("Прочие моды", "Other mods"),
         };
 
-        public static bool IsRussian
+        public static bool IsRussian =>
+            CurrentGameLanguage() is { } lang && lang.IndexOf("russian", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        /// <summary>
+        /// The language the game is actually using. Localization.s_Language is what SelectLanguage sets and what
+        /// the game uses for its own translations; the Language property is only a fallback.
+        /// </summary>
+        private static string CurrentGameLanguage()
         {
-            get
+            try
             {
-                try
-                {
-                    var lang = Il2Cpp.Localization.Language;
-                    return lang != null &&
-                           (lang.IndexOf("russian", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                            lang.StartsWith("ru", StringComparison.OrdinalIgnoreCase));
-                }
-                catch
-                {
-                    return false;
-                }
+                var lang = Il2Cpp.Localization.s_Language;
+                if (!string.IsNullOrEmpty(lang)) return lang;
+            }
+            catch
+            {
+                // ignored, try the property below
+            }
+
+            try
+            {
+                return Il2Cpp.Localization.Language;
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -81,6 +100,43 @@ namespace CraftCategories
 
         /// <summary>Key for ModSettings: "CRAFTCAT_KEY" or "CRAFTCAT_KEY|arg".</summary>
         public static string Key(string key, object arg = null) => Prefix + key + (arg != null ? "|" + arg : "");
+
+        /// <summary>
+        /// Brings a text of this mod to the current game language. Accepts a "CRAFTCAT_…" key or an already translated
+        /// text in either language (used for texts that ModSettings caches and shows again without translating).
+        /// Returns null if the text is not ours or is already in the current language.
+        /// </summary>
+        public static string Relocalize(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return null;
+            if (Resolve(text) is { } fromKey) return fromKey;
+
+            bool russian = IsRussian;
+            foreach (var (key, t) in Texts)
+            {
+                var wrong = russian ? t.en : t.ru;
+                var right = russian ? t.ru : t.en;
+                if (!wrong.Contains("{"))
+                {
+                    if (text == wrong) return right;
+                    continue;
+                }
+                var match = TemplateRegex(wrong).Match(text);
+                if (match.Success)
+                    return string.Format(right, match.Groups.Cast<Group>().Skip(1).Select(g => (object)g.Value).ToArray());
+            }
+            return null;
+        }
+
+        private static readonly Dictionary<string, Regex> templateRegexes = new();
+
+        /// <summary>"Show recipe {0} in…" -> regex that captures {0}.</summary>
+        private static Regex TemplateRegex(string template)
+        {
+            if (templateRegexes.TryGetValue(template, out var rx)) return rx;
+            var pattern = "^" + Regex.Replace(Regex.Escape(template), @"\\\{\d+}", "(.*?)") + "$";
+            return templateRegexes[template] = new Regex(pattern, RegexOptions.Singleline);
+        }
 
         /// <summary>Parses a key from Localization.Get. Returns null if the key is not ours.</summary>
         public static string Resolve(string fullKey)

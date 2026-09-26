@@ -1,7 +1,7 @@
 using System;
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(CraftCategories.Main), "CraftCategories", "0.5.2", "drek932")]
+[assembly: MelonInfo(typeof(CraftCategories.Main), "CraftCategories", "0.6.0", "drek932")]
 [assembly: MelonGame("Hinterland", "TheLongDark")]
 // Load before other mods to catch their recipe registration.
 [assembly: MelonPriority(-1000)]
@@ -19,6 +19,8 @@ namespace CraftCategories
     public sealed class Main : MelonMod
     {
         internal static MelonLogger.Instance Log;
+
+        private static bool settingsMenuCreated;
 
         public override void OnInitializeMelon()
         {
@@ -45,10 +47,15 @@ namespace CraftCategories
         {
             SettingsMenu.Register();
             ModSettingsPatches.Apply(harmony);
+            settingsMenuCreated = true;
         }
 
         public override void OnUpdate() => CraftingPanelUI.Update();
 
-        public override void OnLateUpdate() => CraftingPanelUI.LateUpdate();
+        public override void OnLateUpdate()
+        {
+            CraftingPanelUI.LateUpdate();
+            if (settingsMenuCreated) ModSettingsPatches.LateUpdate();
+        }
     }
 }

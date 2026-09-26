@@ -35,6 +35,12 @@ namespace CraftCategories
         /// <summary>Show the mod name when hovering over its category button.</summary>
         public bool ShowModNameOnHover { get; set; } = true;
 
+        /// <summary>
+        /// Mod recipes that can be crafted right now are also shown in the game's categories,
+        /// even if the mod is set to "Mod category only".
+        /// </summary>
+        public bool CraftableInGameCategories { get; set; } = false;
+
         public SortedDictionary<string, ModConfig> Mods { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
         public sealed class ModConfig
