@@ -49,7 +49,7 @@ Just create your crafting mod. CraftCategories handles the organization automati
 ### Install
 
 1. Download the latest [release](https://github.com/drek932/CraftCategories/releases).
-2. Extract the contents into your `Mods` folder.
+2. Put `CraftCategories.dll` into your `Mods` folder.
 3. Launch the game.
 
 CraftCategories will automatically detect compatible crafting mods.
