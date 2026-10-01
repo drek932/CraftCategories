@@ -77,6 +77,11 @@ Tested with:
 
 CraftCategories does not rely on a manually maintained list of supported crafting mods.
 
+## Support the Author
+
+If you enjoy my work and would like to support the creation of new mods, you can make a voluntary donation on Ko-fi.
+(https://ko-fi.com/drek932)
+
 ## License
 
 [MIT](LICENSE)
