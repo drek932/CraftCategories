@@ -81,6 +81,7 @@ CraftCategories does not rely on a manually maintained list of supported craftin
 If you enjoy my work, you can leave a voluntary donation on Ko-fi or Boosty.
 
 ☕ Support me on Ko-fi [https://ko-fi.com/drek932]
+
 💙 Support me on Boosty [https://boosty.to/alternatively]
 
 
