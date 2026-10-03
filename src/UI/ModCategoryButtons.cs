@@ -20,6 +20,10 @@ namespace CraftCategories
         {
             public ModCatalog.ModEntry Mod;
             public UIButton Button;
+
+            // What we added to the game's navigation lists, so exactly these can be removed again.
+            public CategoryButton CategoryButton;
+            public GameObject NotificationFlag;
         }
 
         private readonly Panel_Crafting panel;
@@ -31,11 +35,17 @@ namespace CraftCategories
         public event Action<Entry> Clicked;
         public event Action<Entry, bool> Hovered;
 
+        /// <summary>Sizes of the game's own navigation lists, for the troubleshooting line in the log.</summary>
+        public string VanillaListSizes { get; }
+
         public ModCategoryButtons(Panel_Crafting panel, Transform grid)
         {
             this.panel = panel;
             this.grid = grid;
-            vanillaCount = Navigation.m_NavigationButtons.Count;
+            var nav = Navigation;
+            vanillaCount = nav.m_NavigationButtons.Count;
+            VanillaListSizes = $"{vanillaCount} buttons, {nav.m_NotificationFlags?.Count ?? 0} notification flags, " +
+                               $"{nav.m_CategoryButtons?.Count ?? 0} category buttons";
 
             float lowestY = 0;
             for (int i = 0; i < grid.childCount; i++)
@@ -79,13 +89,16 @@ namespace CraftCategories
         {
             if (entries.Count == 0) return;
 
+            // Remove exactly what we added (by reference). The game's lists don't all have the same length,
+            // so cutting them at "vanilla button count" left a destroyed flag behind, and the game then threw a
+            // NullReferenceException in Panel_Crafting.ResetNotificationsData on every scene change.
             var nav = Navigation;
-            TrimToVanilla(nav.m_NavigationButtons);
-            TrimToVanilla(nav.m_CategoryButtons);
-            TrimToVanilla(nav.m_NotificationFlags);
-
             foreach (var e in entries)
             {
+                nav.m_NavigationButtons.Remove(e.Button);
+                if (e.CategoryButton != null) nav.m_CategoryButtons?.Remove(e.CategoryButton);
+                if (e.NotificationFlag != null) nav.m_NotificationFlags?.Remove(e.NotificationFlag);
+
                 if (e.Button == null) continue;
                 e.Button.transform.SetParent(null, false); // remove from the column now, Destroy happens at the end of the frame
                 Object.Destroy(e.Button.gameObject);
@@ -93,12 +106,6 @@ namespace CraftCategories
             entries.Clear();
 
             if (nav.m_CurrentIndex >= vanillaCount) nav.SetCurrentIndex(0, true);
-        }
-
-        private void TrimToVanilla<T>(Il2CppSystem.Collections.Generic.List<T> list)
-        {
-            if (list != null && list.Count > vanillaCount)
-                list.RemoveRange(vanillaCount, list.Count - vanillaCount);
         }
 
         private Entry CreateButton(ModCatalog.ModEntry mod, float y)
@@ -122,14 +129,19 @@ namespace CraftCategories
 
             SetIcon(go, mod);
 
-            // Register in the game's navigation (the lists must have the same length).
+            // Register in the game's navigation.
             nav.m_NavigationButtons.Add(entry.Button);
-            nav.m_CategoryButtons?.Add(new CategoryButton(entry.Button));
+            if (nav.m_CategoryButtons != null)
+            {
+                entry.CategoryButton = new CategoryButton(entry.Button);
+                nav.m_CategoryButtons.Add(entry.CategoryButton);
+            }
             var flag = go.transform.Find("NotificationIconPrefab_V2");
-            if (flag != null)
+            if (flag != null && nav.m_NotificationFlags != null)
             {
                 flag.gameObject.SetActive(false);
-                nav.m_NotificationFlags?.Add(flag.gameObject);
+                entry.NotificationFlag = flag.gameObject;
+                nav.m_NotificationFlags.Add(entry.NotificationFlag);
             }
             return entry;
         }

@@ -40,7 +40,8 @@ namespace CraftCategories
                     Build(opened);
                     int modRecipes = ModCatalog.Mods.Sum(m => m.Blueprints.Count);
                     Main.Log.Msg($"Crafting menu: {modButtons.Count} mod categories added, {modRecipes} mod recipes recognized " +
-                                 $"({ModCatalog.TotalRecipes} recipes in game, {ModCatalog.RecipesInGameList} in its own list; hooked via {hookedVia})");
+                                 $"({ModCatalog.TotalRecipes} recipes in game, {ModCatalog.RecipesInGameList} in its own list; " +
+                                 $"game navigation: {modButtons.VanillaListSizes}; hooked via {hookedVia})");
                 }
                 else if (builtConfigVersion != Config.Version) RebuildModButtons();
 

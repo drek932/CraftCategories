@@ -1,6 +1,7 @@
 using HarmonyLib;
 using Il2Cpp;
 using Il2CppTLD.Gear;
+using UnityEngine;
 
 namespace CraftCategories
 {
@@ -96,6 +97,43 @@ namespace CraftCategories
         {
             private static void Postfix(CategoryButtonNavigation __instance, int index) =>
                 CraftingPanelUI.OnNavigationIndexChanged(__instance, index);
+        }
+
+        /// <summary>
+        /// On every scene change the game calls SetActive(false) on each object in the category navigation's
+        /// m_NotificationFlags and throws a NullReferenceException on a destroyed one (no null check there).
+        /// Safety net: replace destroyed entries with an inactive placeholder before that. Replace, not remove,
+        /// so the list keeps its length. Normally there is nothing to replace (see ModCategoryButtons.Clear).
+        /// </summary>
+        [HarmonyPatch(typeof(Panel_Crafting), nameof(Panel_Crafting.ResetNotificationsData))]
+        private static class ResetNotificationsData
+        {
+            private static void Prefix(Panel_Crafting __instance)
+            {
+                try
+                {
+                    var nav = __instance.m_CategoryNavigation;
+                    var flags = nav != null ? nav.m_NotificationFlags : null;
+                    if (flags == null) return;
+
+                    int replaced = 0;
+                    for (int i = 0; i < flags.Count; i++)
+                    {
+                        if (flags[i] != null) continue; // Unity null check: also true for destroyed objects
+                        var placeholder = new GameObject("CC_NotificationPlaceholder");
+                        placeholder.transform.SetParent(nav.transform, false);
+                        placeholder.SetActive(false);
+                        flags[i] = placeholder;
+                        replaced++;
+                    }
+                    if (replaced > 0)
+                        Main.Log.Warning($"Replaced {replaced} destroyed notification flag(s) in the crafting menu before scene change");
+                }
+                catch (System.Exception e)
+                {
+                    Main.Log.Error("Could not check the crafting menu notification flags: " + e);
+                }
+            }
         }
     }
 }
