@@ -21,6 +21,7 @@
     <Reference Include="Il2Cppmscorlib"><HintPath>$(IlDir)\Il2Cppmscorlib.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Il2CppSystem"><HintPath>$(IlDir)\Il2CppSystem.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Assembly-CSharp"><HintPath>$(IlDir)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.ResourceManager"><HintPath>$(IlDir)\Unity.ResourceManager.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="ModSettings"><HintPath>$(TLDPath)/Mods/ModSettings.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine"><HintPath>$(IlDir)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine.PhysicsModule"><HintPath>$(IlDir)\UnityEngine.PhysicsModule.dll</HintPath><Private>false</Private></Reference>

@@ -71,8 +71,7 @@ The interface follows the game's language settings.
 
 Tested with:
 
-- The Long Dark 2.54
-- The Long Dark 2.55
+- The Long Dark 2.58 (for 2.54–2.55 use version 0.6.3)
 - MelonLoader 0.7.2
 
 CraftCategories does not rely on a manually maintained list of supported crafting mods.

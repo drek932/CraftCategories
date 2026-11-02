@@ -45,20 +45,22 @@ namespace CraftCategories
 
             // The game's own recipes are loaded from its resources (addressables). With some mod setups modded recipes
             // end up in that list too, so it only decides for recipes that no known mod claims by name.
-            var gameList = new HashSet<IntPtr>();
-            if (bm.m_AddressableBlueprints != null)
-                foreach (var bp in bm.m_AddressableBlueprints) if (bp != null) gameList.Add(bp.Pointer);
-
+            var gameList = GameRecipes(bm);
             TotalRecipes = bm.m_AllBlueprints.Count;
             RecipesInGameList = gameList.Count;
+
+            // Without the game's list we can't tell game recipes from unknown mod recipes: then everything that
+            // no known mod claims is treated as a game recipe (no "Other mods" category) instead of the other way round.
+            bool noGameList = gameList.Count == 0;
 
             var byMod = new Dictionary<string, ModEntry>();
             foreach (var bp in bm.m_AllBlueprints)
             {
                 if (bp == null) continue;
 
-                var source = FindSource(bp, inGameList: gameList.Contains(bp.Pointer));
-                if (source == null && gameList.Contains(bp.Pointer)) continue; // a game recipe
+                bool inGameList = noGameList || gameList.Contains(bp.Pointer);
+                var source = FindSource(bp, inGameList);
+                if (source == null && inGameList) continue; // a game recipe
 
                 var mod = source?.ModName ?? UnknownMod;
 
@@ -76,6 +78,33 @@ namespace CraftCategories
 
             builtForCount = bm.m_AllBlueprints.Count;
             return true;
+        }
+
+        /// <summary>
+        /// Recipes the game loaded from its own resources. Game 2.58 removed the list field m_AddressableBlueprints;
+        /// the same list is now the Result of m_AddressableBlueprintHandle.
+        /// </summary>
+        private static HashSet<IntPtr> GameRecipes(BlueprintManager bm)
+        {
+            var result = new HashSet<IntPtr>();
+            try
+            {
+                var handle = bm.m_AddressableBlueprintHandle;
+                if (!handle.IsValid() || !handle.IsDone || handle.Result == null) return result;
+
+                var list = handle.Result;
+                var count = list.TryCast<Il2CppSystem.Collections.Generic.ICollection<BlueprintData>>()?.Count ?? 0;
+                for (int i = 0; i < count; i++)
+                {
+                    var bp = list[i];
+                    if (bp != null) result.Add(bp.Pointer);
+                }
+            }
+            catch (Exception e)
+            {
+                Main.Log.Warning("Could not read the game's own recipe list: " + e.Message);
+            }
+            return result;
         }
 
         /// <summary>
